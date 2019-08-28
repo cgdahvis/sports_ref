@@ -1,0 +1,14 @@
+from sportsreference.ncaaf.teams import Teams
+from sportsreference.ncaaf.schedule import Schedule
+
+%pylab inline
+import pandas as pd
+import seaborn as sns
+
+df=Schedule('LOUISVILLE',2018).dataframe
+df['spread']=df['points_for']-df['points_against']
+df['spread'].describe()
+
+df.query('spread < -19.5')
+
+sns.distplot(df['spread'],bins=12)
