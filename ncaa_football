@@ -5,6 +5,5 @@ from sportsreference.ncaaf.schedule import Schedule
 import pandas as pd
 import seaborn as sns
 
-teams = Teams()
-for team in teams:
-    print(team.abbreviation)
+from sportsreference.ncaaf.teams import Teams
+dfs=Teams(2018).dataframes
