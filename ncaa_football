@@ -7,3 +7,8 @@ import seaborn as sns
 
 from sportsreference.ncaaf.teams import Teams
 dfs=Teams(2018).dataframes
+
+
+#print rating systems
+for i in years:
+    print(Teams(i).dataframes.query('abbreviation == "KANSAS-STATE"')['simple_rating_system'])
