@@ -4,11 +4,93 @@ from sportsreference.ncaaf.schedule import Schedule
 %pylab inline
 import pandas as pd
 import seaborn as sns
+sns.set_style("darkgrid")
+sns.set(font_scale=1.6)
 
-df=Schedule('LOUISVILLE',2018).dataframe
-df['spread']=df['points_for']-df['points_against']
-df['spread'].describe()
 
-df.query('spread < -19.5')
+#get all teams in a list
+team_list=[]
 
-sns.distplot(df['spread'],bins=12)
+#goal - to see relationship between difference in two team simple performance rating and score outcome (regression)
+teams = Teams()
+for team in teams:
+    team_list.append(team.abbreviation)
+
+this_yr=pd.DataFrame()
+
+for i in team_list:
+    this_yr=this_yr.append(Schedule(i,2019).dataframe)
+
+redundant_list=[] #this is to make a column of the team who is being queried
+
+for i in team_list: #for each team in the list
+    for index in range((len(Schedule(i,2019).dataframe))):   
+        redundant_list.append(i)
+
+this_yr['team']=redundant_list
+#CREATE A COLUMN FOR SPREAD
+this_yr['spread']=this_yr['points_for']-this_yr['points_against']
+
+
+#now to get the simple rating system values
+from sportsreference.ncaaf.teams import Teams
+from sportsreference.ncaaf.schedule import Schedule
+
+dfs=Teams(2019).dataframes
+df=dfs[['simple_rating_system']] #standalone dataframe very simple
+
+games=this_yr
+games=games.set_index('team') #standalone dataframe for game line items
+
+games=games.join(df)
+
+games=games.reset_index().rename(columns={'index':'team','simple_rating_system':'team_rating'}) #renaming columns to repeat prior process with opponent
+
+games['opponent_abbr']=games['opponent_abbr'].str.upper()
+games['opponent_abbr']=games['opponent_abbr'].str.replace(' ','-')
+games=games.set_index('opponent_abbr')
+
+games=games.join(df)
+
+games=games.reset_index()
+games=games.rename(columns={'index':'opp_name','simple_rating_system':'opp_rating'})
+
+games['team_minus_opponent']=games['team_rating']-games['opp_rating']
+
+season_2018=pd.read_pickle("season2018.pkl")
+
+season_2018=season_2018.rename(columns={'team_rating':'SRS_2018'})
+
+ratings_18=season_2018[['team','SRS_2018']]
+ratings_18=ratings_18.set_index('team')
+
+games=games.set_index('team')
+games=games.join(ratings_18)
+
+games=games.reset_index()
+games=games.set_index('opp_name')
+ratings_18=ratings_18.rename(columns={'SRS_2018':'opp_SRS_18'})
+games=games.join(ratings_18)
+games=games.reset_index()
+
+games['SRS_18_differential']=games['SRS_2018']-games['opp_SRS_18']
+games['spread']=pd.to_numeric(games['spread'])
+
+from datetime import date
+today = pd.datetime.today()
+today_next_week = today + relativedelta(days=8)
+upcoming_gms=games.drop_duplicates().loc[games['datetime'].between(today,today_next_week)]
+
+#drop duplicates...
+upcoming_gms=upcoming_gms.drop_duplicates(subset='boxscore_index',keep='last')
+
+upcoming_gms=upcoming_gms[['index', 'team', 'date', 'datetime', 'day_of_week',
+       'game', 'location', 'losses',
+       'opponent_rank', 'rank',
+        'time', 'wins', 'team_rating', 'opp_rating',
+       'team_minus_opponent', 'SRS_2018', 'opp_SRS_18', 'SRS_18_differential',
+       ]]
+
+upcoming_gms['implied_spread_18']=upcoming_gms['SRS_18_differential']*1.25
+
+upcoming_gms
