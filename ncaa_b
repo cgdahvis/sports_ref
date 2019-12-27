@@ -1,0 +1,17 @@
+from sportsreference.ncaab.teams import Teams
+from sportsreference.ncaab.schedule import Schedule
+
+%pylab inline
+import pandas as pd
+import seaborn as sns
+from scipy import stats
+
+#need dataframe that contains simple rating system info
+dfs=Teams(2019).dataframes #THIS YEAR
+
+#LAST YEAR
+df_2018=Teams(2018).dataframes #LAST YEAR
+
+dfs.query('abbreviation == ["FLORIDA-ATLANTIC","CANISIUS"]')[["simple_rating_system",'field_goal_percentage','steal_percentage']]
+
+df_2018.query('abbreviation == ["FLORIDA-ATLANTIC","CANISIUS"]')[["simple_rating_system",'field_goal_percentage','steal_percentage']]
